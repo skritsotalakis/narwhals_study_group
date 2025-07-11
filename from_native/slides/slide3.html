@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Narwhals Flow Chart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+      background: #1a202c; 
+      color: white; 
+      padding: 40px 20px; 
+      min-height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      user-select: none;
+    }
+    .title { font-size: 52px; font-weight: 800; margin-bottom: 30px; text-shadow: 0 4px 8px rgba(255,255,255,0.3); }
+    .workflow { font-size: 32px; line-height: 2.5; margin-bottom: 40px; }
+    .step { opacity: 0; transition: opacity 0.5s; margin-bottom: 10px; }
+    .step.visible { opacity: 1; }
+    .user { color: #fff; font-weight: bold; }
+    .magic { color: #bb6bd9; font-weight: 600; }
+    .code { 
+      background: #2d3748; 
+      border-radius: 12px; 
+      padding: 20px 30px; 
+      width: 700px; 
+      font-family: Monaco, monospace; 
+      font-size: 21px; 
+      position: absolute; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      opacity: 0; 
+      transition: opacity 0.5s;
+      box-shadow: 0 10px 25px rgba(255,255,255,0.1);
+    }
+    .code.visible { opacity: 1; }
+    #def { top: calc(50% - 250px); }
+    #ret { top: calc(50% - 200px); }
+    .container { position: relative; width: 100%; height: 400px; margin-bottom: 30px; }
+    .kw { color: #bb6bd9; } .fn { color: #4fd1c7; } .pr { color: #f6e05e; } .tp { color: #68d391; } .cm { color: #a0aec0; }
+    .hl { background: rgba(255,255,255,0.2); border-radius: 4px; padding: 0 4px; }
+    svg { margin-top: -270px; }
+    .box { cursor: pointer; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.1)); stroke-width: 3px; }
+    .box:hover { filter: drop-shadow(0 6px 6px rgba(0,0,0,0.2)); }
+    .ttl { font-weight: 700; font-size: 25px; text-anchor: middle; }
+    .glow { text-shadow: 0 0 8px #f6e05e; }
+    .desc { font-size: 22px; line-height: 42px; color: white; opacity: 0.9; padding: 0 10px; }
+  </style>
+</head>
+<body>
+  <h1 class="title">Object creation: nw.from_native(native_object)</h1>
+  
+  <div class="workflow">
+    <div class="step" id="s0"><span class="user">1. User creates:</span> pandas.DataFrame</div>
+    <div class="step" id="s1"><span class="magic">2. Narwhals does its magic:</span> nw._pandas_like.PandasLikeDataFrame</div>
+    <div class="step" id="s2"><span class="user">3. User enjoys:</span> nw.DataFrame</div>
+  </div>
+
+  <div class="container">
+    <div class="code" id="def">
+      <div><span class="kw">def</span> <span class="fn">_from_native_impl</span>( <span class="cm"># noqa</span></div>
+      <div>&nbsp;&nbsp;<span class="pr">native_object</span>: <span class="tp">Any</span>,</div>
+      <div>&nbsp;&nbsp;*,</div>
+      <div>&nbsp;&nbsp;<span class="pr">pass_through</span>: <span class="tp">bool</span> = <span class="kw">False</span>,</div>
+      <div>&nbsp;&nbsp;<span class="pr">eager_only</span>: <span class="tp">bool</span> = <span class="kw">False</span>,</div>
+      <div>&nbsp;&nbsp;<span class="pr">version</span>: <span class="tp">Version</span>,</div>
+      <div>) -> <span class="tp">Any</span>:</div>
+    </div>
+
+    <div class="code" id="ret">
+      <div><span class="kw">return</span> (</div>
+      <div>&nbsp;&nbsp;version.namespace.<span id="c0" class="fn">from_native_object</span>(<span class="pr">native_object</span>)</div>
+      <div>&nbsp;&nbsp;.compliant.<span id="c2" class="fn">from_native</span>(<span class="pr">native_object</span>)</div>
+      <div>&nbsp;&nbsp;.<span id="c3" class="fn">to_narwhals</span>()</div>
+      <div>)</div>
+    </div>
+  </div>
+
+  <svg width="100%" height="400" viewBox="0 0 2400 400" style="margin-top: -270px;"></svg>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script>
+    const svg = d3.select('svg');
+    const steps = [
+      { title: [['from_native_object', '#4fd1c7'], ['(', '#e2e8f0'], ['native_object', '#f6e05e'], [')', '#e2e8f0']], 
+        desc: '• Inspects native_object<br>• Determines backend e.g. pandas<br>• Returns Namespace instance e.g. Namespace[PandasLikeNamespace]', code: '#c0' },
+      { title: [['compliant', '#fff']], desc: '• Creates compliant wrapper', code: null },
+      { title: [['from_native', '#4fd1c7'], ['(', '#e2e8f0'], ['native_object', '#f6e05e'], [')', '#e2e8f0']], 
+        desc: '• Wraps native object in compliant class e.g. PandasLikeDataFrame<br>• Provides backend-specific methods', code: '#c2' },
+      { title: [['to_narwhals', '#4fd1c7'], ['()', '#e2e8f0']], 
+        desc: '• Converts to Narwhals DataFrame<br>• Wraps compliant and native objects', code: '#c3' }
+    ];
+
+    const boxes = steps.map((s, i) => {
+      const g = svg.append('g').attr('transform', `translate(${400 + i * 520}, 200)`).style('opacity', 0);
+      g.append('rect').attr('x', -230).attr('y', -130).attr('width', 460).attr('height', 260)
+        .attr('rx', 16).attr('fill', '#2d3748').attr('stroke', '#4fd1c7').attr('class', 'box');
+      const t = g.append('text').attr('y', -100).attr('class', 'ttl');
+      s.title.forEach(([txt, clr]) => t.append('tspan').attr('fill', clr).text(txt));
+      g.append('foreignObject').attr('x', -220).attr('y', -80).attr('width', 440).attr('height', 200)
+        .append('xhtml:div').attr('class', 'desc').html(s.desc);
+      return { g, t, code: s.code };
+    });
+
+    let step = -1;
+    const all = ['s0', 's1', 's2', 'def', 'ret', ...boxes];
+
+    function show(i) {
+      const item = all[i];
+      if (typeof item === 'string') {
+        document.getElementById(item).classList.add('visible');
+        if (item === 'def' || item === 'ret') {
+          const other = item === 'def' ? 'ret' : 'def';
+          document.getElementById(other).classList.remove('visible');
+        }
+      } else {
+        item.g.transition().duration(500).style('opacity', 1);
+        document.querySelectorAll('.hl').forEach(el => el.classList.remove('hl'));
+        svg.selectAll('.ttl').classed('glow', false);
+        if (item.code) document.querySelector(item.code)?.classList.add('hl');
+        item.t.classed('glow', true);
+      }
+    }
+
+    function hide(i) {
+      const item = all[i];
+      if (typeof item === 'string') {
+        document.getElementById(item).classList.remove('visible');
+      } else {
+        item.g.transition().duration(300).style('opacity', 0);
+        document.querySelectorAll('.hl').forEach(el => el.classList.remove('hl'));
+        svg.selectAll('.ttl').classed('glow', false);
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'ArrowRight' && step < all.length - 1) show(++step);
+      else if (e.code === 'ArrowLeft' && step >= 0) {
+        hide(step--);
+        if (step >= 4) {
+          const box = boxes[step - 5];
+          if (box.code) document.querySelector(box.code)?.classList.add('hl');
+          box.t.classed('glow', true);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

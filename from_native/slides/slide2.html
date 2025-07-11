@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pandas to Narwhals</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a202c; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+    .container { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+    .main { display: flex; align-items: center; font-size: 64px; font-weight: 700; color: #cbd5e0; margin-bottom: 60px; }
+    .lines { display: flex; flex-direction: column; align-items: flex-start; }
+    .line { font: 32px Monaco, monospace; color: #a0aec0; display: none; margin-bottom: 20px; }
+    .problem { font: 32px Monaco, monospace; color: #e2e8f0; margin-top: 20px; display: none; }
+    .problem .hl { color: #fca5a5; }
+    .boxes { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100vw; height: 100vh; display: none; }
+    .box { position: absolute; background: rgba(45, 55, 72, 0.3); border: 2px solid rgba(226, 232, 240, 0.3); border-radius: 12px; padding: 28px; backdrop-filter: blur(10px); opacity: 0; transform: scale(0.8); transition: all 0.5s ease; }
+    .box.show { opacity: 1; transform: scale(1); }
+    .box-title { font-size: 28px; font-weight: 600; margin-bottom: 16px; text-align: center; }
+    .box-content { font-size: 18px; color: #a0aec0; line-height: 1.9; }
+    
+    /* BOX POSITIONING - Change these values to adjust positioning and distances */
+    .left, .right { 
+      top: 65%; /* Vertical position of left/right boxes */
+      width: 320px; 
+      transition: all 0.7s ease; 
+    }
+    .left.init { 
+      left: 50%; 
+      transform: translateX(-450px); /* Initial left box distance from center */
+    }
+    .right.init { 
+      left: 50%; 
+      transform: translateX(50px); /* Initial right box distance from center */
+    }
+    .left.shift { 
+      left: calc(40px + 280px / 3); /* Final left box position - change 40px for left margin */
+      transform: none; 
+    }
+    .right.shift { 
+      right: calc(40px + 280px / 3); /* Final right box position - change 40px for right margin */
+      left: auto; 
+      transform: none; 
+    }
+    .center { 
+      left: 50%; 
+      top: 65%; /* Vertical position of center box - match with left/right top value */
+      width: 360px; 
+      transform: translateX(-50%) scale(0.8); 
+      opacity: 0; 
+      transition: all 0.5s ease; 
+    }
+    .center.show { opacity: 1; transform: translateX(-50%) scale(1); }
+    
+    .arrows { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s; }
+    .arrows.show { opacity: 1; }
+    .line-arr { position: absolute; height: 3px; background: #ff6b35; }
+    .head { position: absolute; width: 0; height: 0; border-left: 15px solid #ff6b35; border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+    .text { position: absolute; font-size: 16px; color: #ff6b35; font-weight: 600; white-space: nowrap; transform: translateY(-50%); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main">
+      <div>Pandas</div><div>⟶</div><div>Narwhals</div><div>⟶</div><div>Pandas</div>
+    </div>
+    <div class="lines">
+      <div class="line" id="l1">1. nw.from_native(pd.DataFrame) → nw.DataFrame</div>
+      <div class="line" id="l2">2. nw.DataFrame.with_columns(..)</div>
+      <div class="line" id="l3">3. nw.DataFrame.to_native() → pd.DataFrame</div>
+      <div class="problem" id="prob"><span class="hl">Problem!</span> pd.DataFrame.with_columns(...) does not exist</div>
+    </div>
+  </div>
+
+  <div class="boxes" id="boxes">
+    <div class="box left" id="left">
+      <div class="box-title">Narwhals Interface</div>
+      <div class="box-content">- nw.DataFrame<br>- Subset of Polars API<br>- Defines publicly available methods</div>
+    </div>
+    <div class="box right" id="right">
+      <div class="box-title">Native Dataframe</div>
+      <div class="box-content">- e.g. Pandas, Polars, DuckDb, PyArrow etc.</div>
+    </div>
+    <div class="box center" id="center">
+      <div class="box-title">Compliant Level</div>
+      <div class="box-content">- e.g. PandasLikeDataFrame<br>- Invisible to the user<br>- Same methods as Narwhals level<br>- Retains backend specific code for methods to work on a given DataFrame</div>
+    </div>
+    <div class="arrows" id="arrows">
+      <div class="line-arr" id="line1"></div>
+      <div class="head" id="head1"></div>
+      <div class="text" id="text1">delegates operations</div>
+      <div class="line-arr" id="line2"></div>
+      <div class="head" id="head2"></div>
+      <div class="text" id="text2">operates on</div>
+    </div>
+  </div>
+
+  <script>
+    let step = 0;
+    const els = ['l1', 'l2', 'l3', 'prob', 'left', 'right', 'center', 'arrows'].map(id => document.getElementById(id));
+    const boxes = document.getElementById('boxes');
+
+    function arrows() {
+      const [leftR, centerR, rightR] = [els[4], els[6], els[5]].map(el => el.getBoundingClientRect());
+      const containerR = boxes.getBoundingClientRect();
+      
+      // Arrow 1: left to center
+      const x1 = leftR.right - containerR.left;
+      const y1 = leftR.top + leftR.height / 2 - containerR.top;
+      const x2 = centerR.left - containerR.left;
+      const w1 = x2 - x1 - 15;
+      
+      document.getElementById('line1').style.cssText = `left:${x1}px;top:${y1}px;width:${w1}px`;
+      document.getElementById('head1').style.cssText = `left:${x2-15}px;top:${y1-8}px`;
+      document.getElementById('text1').style.cssText = `left:${(x1+x2)/2}px;top:${y1-30}px;transform:translateX(-50%)`;
+      
+      // Arrow 2: center to right
+      const x3 = centerR.right - containerR.left;
+      const y2 = centerR.top + centerR.height / 3 - containerR.top;
+      const x4 = rightR.left - containerR.left;
+      const w2 = x4 - x3 - 15;
+      
+      document.getElementById('line2').style.cssText = `left:${x3}px;top:${y2}px;width:${w2}px`;
+      document.getElementById('head2').style.cssText = `left:${x4-15}px;top:${y2-8}px`;
+      document.getElementById('text2').style.cssText = `left:${(x3+x4)/2}px;top:${y2-30}px;transform:translateX(-50%)`;
+    }
+
+    function update() {
+      [els[0], els[1], els[2], els[3]].forEach((el, i) => el.style.display = step > i ? 'block' : 'none');
+      
+      if (step >= 4) {
+        boxes.style.display = 'block';
+        els[4].className = 'box left show init';
+        els[5].className = 'box right show init';
+      } else {
+        boxes.style.display = 'none';
+        els[4].className = 'box left';
+        els[5].className = 'box right';
+        els[6].className = 'box center';
+        els[7].classList.remove('show'); // Hide arrows when going back
+      }
+
+      if (step >= 5) {
+        els[4].className = 'box left show shift';
+        els[5].className = 'box right show shift';
+        els[6].className = 'box center show';
+      } else if (step === 4) {
+        // FIXED: When going back to step 4, hide center box and reset left/right positions
+        els[6].className = 'box center';
+        els[4].className = 'box left show init';
+        els[5].className = 'box right show init';
+      }
+
+      if (step >= 6) {
+        setTimeout(() => { arrows(); els[7].classList.add('show'); }, 300);
+      } else {
+        els[7].classList.remove('show');
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') step = Math.min(step + 1, 6);
+      else if (e.key === 'ArrowLeft') step = Math.max(step - 1, 0);
+      update();
+    });
+  </script>
+</body>
+</html>

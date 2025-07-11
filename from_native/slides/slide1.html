@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Narwhals Intro Slide</title>
+  <style>
+    body, svg {
+      margin: 0;
+      padding: 0;
+      background: #1a202c;
+      font-family: 'Monaco', 'Menlo', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .central {
+      fill: #38a169;
+      stroke: white;
+      stroke-width: 3;
+    }
+
+    circle {
+      stroke: white;
+      stroke-width: 2;
+    }
+
+    line {
+      stroke: #4a5568;
+      stroke-width: 2;
+    }
+
+    .dashed-line {
+      stroke-dasharray: 10,5;
+    }
+
+    .arrow {
+      stroke: #A9B0B3;
+      stroke-width: 1;
+      fill: #A9B0B3;
+    }
+
+    text {
+      fill: white;
+      font-size: 22px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+
+    image {
+      filter: brightness(1.2);
+    }
+  </style>
+</head>
+<body>
+  <svg>
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7"
+        refX="9" refY="3.5" orient="auto" class="arrow">
+        <polygon points="0 0, 10 3.5, 0 7" />
+      </marker>
+    </defs>
+  </svg>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script>
+    const width = window.innerWidth, height = window.innerHeight;
+    const ibisColor = "#8073ac";
+
+    const backends = [
+      { name: "Modin", logo: "https://raw.githubusercontent.com/modin-project/modin/master/docs/img/MODIN_ver2_hrz.png" },
+      { name: "pandas", logo: "https://raw.githubusercontent.com/pandas-dev/pandas/main/web/pandas/static/img/pandas.svg" },
+      { name: "Polars", logo: "https://avatars.githubusercontent.com/u/83768144?v=4" },
+      { name: "PyArrow", logo: "https://arrow.apache.org/img/logo-spacing-hex.png" },
+      { name: "DuckDB", logo: "https://duckdb.org/images/logo-dl/DuckDB_Logo-horizontal.svg" },
+      { name: "Ibis", logo: "https://ibis-project.org/logo.svg" },
+      { name: "PySpark", logo: "https://spark.apache.org/images/spark-logo-trademark.png" },
+      { name: "SQLFrame", logo: "https://sqlframe.readthedocs.io/en/stable/docs/images/sqlframe_logo.png" },
+    ];
+
+    const centralNode = { id: "Narwhals", radius: 100, x: width / 2, y: height / 2, fx: width / 2, fy: height / 2 };
+    const nodes = backends.map(d => ({ ...d, radius: 70 + Math.random() * 10, color: ibisColor }));
+    const daftNode = { id: "Daft", radius: 70 + Math.random() * 10, color: ibisColor, logo: "https://miro.medium.com/v2/resize:fit:1400/1*kMwCYHYcGvmcFacp6So6pQ.png" };
+
+    const allNodes = [centralNode, ...nodes, daftNode];
+    const links = nodes.map(n => ({ source: centralNode, target: n }))
+      .concat({ source: centralNode, target: daftNode, isSpecial: true });
+
+    const floatDir = Object.fromEntries([...nodes, daftNode].map(n => [n.id, { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 }]));
+
+    const svg = d3.select("svg");
+    const sim = d3.forceSimulation(allNodes)
+      .force("link", d3.forceLink(links).distance(200).strength(0.8))
+      .force("charge", d3.forceManyBody().strength(-800))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide().radius(d => d.radius + 10));
+
+    const link = svg.selectAll("line")
+      .data(links)
+      .enter().append("line")
+      .attr("class", d => d.isSpecial ? "dashed-line" : null);
+
+    // Create four arrows - three existing ones plus the cycle arrow
+    const arrowLineDuckDB = svg.append("line")
+      .attr("class", "arrow")
+      .attr("marker-end", "url(#arrowhead)")
+      .style("opacity", 0);
+
+    const arrowLinePolars = svg.append("line")
+      .attr("class", "arrow")
+      .attr("marker-end", "url(#arrowhead)")
+      .style("opacity", 0);
+
+    const arrowLinePySpark = svg.append("line")
+      .attr("class", "arrow")
+      .attr("marker-end", "url(#arrowhead)")
+      .style("opacity", 0);
+
+    // Create the pandas-narwhals-pyarrow cycle arrow
+    const arrowLineCycle = svg.append("line")
+      .attr("class", "arrow")
+      .attr("marker-end", "url(#arrowhead)")
+      .style("opacity", 0);
+
+    const node = svg.selectAll("g")
+      .data(allNodes)
+      .enter().append("g");
+
+    node.append("circle")
+      .attr("r", d => d.radius)
+      .attr("class", d => d.id === "Narwhals" ? "central" : null)
+      .attr("fill", d => d.id === "Narwhals" ? "#38a169" : d.color);
+
+    node.append("image")
+      .attr("href", d => d.id === "Narwhals"
+        ? "https://narwhals-dev.github.io/narwhals/assets/logo.svg"
+        : d.logo)
+      .attr("x", d => -d.radius * (d.id === "Narwhals" ? 1 : 0.7))
+      .attr("y", d => -d.radius * (d.id === "Narwhals" ? 1 : 0.7))
+      .attr("width", d => d.radius * (d.id === "Narwhals" ? 2 : 1.4))
+      .attr("height", d => d.radius * (d.id === "Narwhals" ? 2 : 1.4))
+      .on("error", function(event, d) {
+        d3.select(this.parentNode).append("text").text(d.id);
+        d3.select(this).remove();
+      });
+
+    // Arrow states for all arrows
+    let arrowDirectionDuckDB = 1;
+    let arrowProgressDuckDB = 0;
+    let arrowDirectionPolars = 1;
+    let arrowProgressPolars = 0.33; // Offset for staggered animation
+    let arrowDirectionPySpark = 1;
+    let arrowProgressPySpark = 0.66; // Offset for staggered animation
+
+    // Cycle arrow states: 0=pandas->narwhals, 1=narwhals->pyarrow, 2=pyarrow->narwhals, 3=narwhals->pandas
+    let cycleState = 0;
+    let cycleProgress = 0;
+
+    function getDuckDBNode() {
+      return allNodes.find(n => n.name === "DuckDB");
+    }
+
+    function getPolarsNode() {
+      return allNodes.find(n => n.name === "Polars");
+    }
+
+    function getPySparkNode() {
+      return allNodes.find(n => n.name === "PySpark");
+    }
+
+    function getPandasNode() {
+      return allNodes.find(n => n.name === "pandas");
+    }
+
+    function getPyArrowNode() {
+      return allNodes.find(n => n.name === "PyArrow");
+    }
+
+    function updateArrow(targetNode, arrowLine, arrowDirection, arrowProgress) {
+      if (!targetNode) return { arrowDirection, arrowProgress };
+
+      const dx = centralNode.x - targetNode.x;
+      const dy = centralNode.y - targetNode.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      const targetEdgeX = targetNode.x + (dx / distance) * targetNode.radius;
+      const targetEdgeY = targetNode.y + (dy / distance) * targetNode.radius;
+      const centralEdgeX = centralNode.x - (dx / distance) * centralNode.radius;
+      const centralEdgeY = centralNode.y - (dy / distance) * centralNode.radius;
+
+      let startX, startY, endX, endY;
+
+      if (arrowDirection === 1) {
+        const currentX = targetEdgeX + (centralEdgeX - targetEdgeX) * arrowProgress;
+        const currentY = targetEdgeY + (centralEdgeY - targetEdgeY) * arrowProgress;
+
+        const remainingDist = distance * (1 - arrowProgress) * 0.7;
+        const arrowLength = Math.min(remainingDist, 60);
+
+        startX = currentX - (dx / distance) * arrowLength;
+        startY = currentY - (dy / distance) * arrowLength;
+        endX = currentX;
+        endY = currentY;
+      } else {
+        const currentX = centralEdgeX + (targetEdgeX - centralEdgeX) * arrowProgress;
+        const currentY = centralEdgeY + (targetEdgeY - centralEdgeY) * arrowProgress;
+
+        const remainingDist = distance * (1 - arrowProgress) * 0.7;
+        const arrowLength = Math.min(remainingDist, 60);
+
+        startX = currentX - ((targetEdgeX - centralEdgeX) / distance) * arrowLength;
+        startY = currentY - ((targetEdgeY - centralEdgeY) / distance) * arrowLength;
+        endX = currentX;
+        endY = currentY;
+      }
+
+      arrowLine
+        .attr("x1", startX)
+        .attr("y1", startY)
+        .attr("x2", endX)
+        .attr("y2", endY)
+        .style("opacity", 0.9);
+
+      arrowProgress += 0.015;
+      if (arrowProgress >= 1) {
+        arrowProgress = 0;
+        arrowDirection *= -1;
+      }
+
+      return { arrowDirection, arrowProgress };
+    }
+
+    function updateCycleArrow() {
+      const pandasNode = getPandasNode();
+      const pyarrowNode = getPyArrowNode();
+      
+      if (!pandasNode || !pyarrowNode) return;
+
+      let startNode, endNode;
+      
+      // Determine start and end nodes based on cycle state
+      switch(cycleState) {
+        case 0: // pandas -> narwhals
+          startNode = pandasNode;
+          endNode = centralNode;
+          break;
+        case 1: // narwhals -> pyarrow
+          startNode = centralNode;
+          endNode = pyarrowNode;
+          break;
+        case 2: // pyarrow -> narwhals
+          startNode = pyarrowNode;
+          endNode = centralNode;
+          break;
+        case 3: // narwhals -> pandas
+          startNode = centralNode;
+          endNode = pandasNode;
+          break;
+      }
+
+      const dx = endNode.x - startNode.x;
+      const dy = endNode.y - startNode.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      const startEdgeX = startNode.x + (dx / distance) * startNode.radius;
+      const startEdgeY = startNode.y + (dy / distance) * startNode.radius;
+      const endEdgeX = endNode.x - (dx / distance) * endNode.radius;
+      const endEdgeY = endNode.y - (dy / distance) * endNode.radius;
+
+      const currentX = startEdgeX + (endEdgeX - startEdgeX) * cycleProgress;
+      const currentY = startEdgeY + (endEdgeY - startEdgeY) * cycleProgress;
+
+      const remainingDist = distance * (1 - cycleProgress) * 0.7;
+      const arrowLength = Math.min(remainingDist, 60);
+
+      const arrowStartX = currentX - (dx / distance) * arrowLength;
+      const arrowStartY = currentY - (dy / distance) * arrowLength;
+
+      arrowLineCycle
+        .attr("x1", arrowStartX)
+        .attr("y1", arrowStartY)
+        .attr("x2", currentX)
+        .attr("y2", currentY)
+        .style("stroke", "#ff6b6b")        
+        .style("opacity", 0.9);
+
+      cycleProgress += 0.015;
+      if (cycleProgress >= 1) {
+        cycleProgress = 0;
+        cycleState = (cycleState + 1) % 4; // Cycle through 0,1,2,3
+      }
+    }
+
+    function updateAllArrows() {
+      // Update DuckDB arrow
+      const duckDBResult = updateArrow(getDuckDBNode(), arrowLineDuckDB, arrowDirectionDuckDB, arrowProgressDuckDB);
+      arrowDirectionDuckDB = duckDBResult.arrowDirection;
+      arrowProgressDuckDB = duckDBResult.arrowProgress;
+
+      // Update Polars arrow
+      const polarsResult = updateArrow(getPolarsNode(), arrowLinePolars, arrowDirectionPolars, arrowProgressPolars);
+      arrowDirectionPolars = polarsResult.arrowDirection;
+      arrowProgressPolars = polarsResult.arrowProgress;
+
+      // Update PySpark arrow
+      const pySparkResult = updateArrow(getPySparkNode(), arrowLinePySpark, arrowDirectionPySpark, arrowProgressPySpark);
+      arrowDirectionPySpark = pySparkResult.arrowDirection;
+      arrowProgressPySpark = pySparkResult.arrowProgress;
+
+      // Update cycle arrow
+      updateCycleArrow();
+    }
+
+    let pulse = centralNode.radius, dir = 0.2;
+    setInterval(() => {
+      pulse += dir;
+      if (pulse > centralNode.radius + 3 || pulse < centralNode.radius - 2) dir *= -1;
+      svg.selectAll(".central").transition().duration(50).attr("r", pulse);
+    }, 100);
+
+    function animate() {
+      updateAllArrows();
+
+      node.attr("transform", d => {
+        d.x = Math.max(d.radius, Math.min(width - d.radius, d.x));
+        d.y = Math.max(d.radius, Math.min(height - d.radius, d.y));
+        return `translate(${d.x},${d.y})`;
+      });
+
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      requestAnimationFrame(animate);
+    }
+
+    animate(); // Kick off continuous animation
+
+    node.on("mouseenter", function(_, d) {
+      if (d.id !== "Narwhals")
+        d3.select(this).select("circle").transition().duration(200).attr("r", d.radius * 1.1).attr("stroke-width", 4);
+    }).on("mouseleave", function(_, d) {
+      if (d.id !== "Narwhals")
+        d3.select(this).select("circle").transition().duration(200).attr("r", d.radius).attr("stroke-width", 2);
+    });
+
+    setTimeout(() => {
+      centralNode.fx = centralNode.fy = null;
+      sim.alpha(0.3).restart(); // Let the simulation run and cool
+    }, 3000);
+  </script>
+</body>
+</html>
