@@ -4,7 +4,7 @@
 
 terms:
 - native    → an object not from Narwhals (e.g. `pandas.DataFrame`, `pyarrow.Table`)
-- compliant → an object within Narwhals that follows a specific polymorphism (e.g. has
+- compliant → an object within Narwhals that follows a specific polymorphism (e.g. expressions have methods like `.mean`, `min`, `max`, `mean`. DataFrames/LazyFrames have `.select`, `.with_columns`; see `narwhals._compliant.Expr` and `narwhals._compliant.DataFrame`)
     - we wrap a native object in a compliant object so that we can use its uniform interface
 
 The native object (like `pandas.DataFrame`) will have its own attributes/methods that
